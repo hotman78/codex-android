@@ -1,0 +1,47 @@
+version: "3"
+
+tasks:
+  setup-python:
+    desc: Python 依存を同期
+    cmds:
+      - uv sync
+
+  setup-frontend:
+    desc: フロントエンド依存をインストール
+    dir: src/frontend
+    cmds:
+      - npm install
+
+  install-backend-deps:
+    desc: FastAPI などバックエンド依存をインストール
+    cmds:
+      - uv sync
+    env:
+      UV_PROJECT_ENVIRONMENT: .venv
+
+  dev-backend:
+    desc: FastAPI 開発サーバを起動
+    deps:
+      - install-backend-deps
+    cmds:
+      - uv run uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+    env:
+      UV_PROJECT_ENVIRONMENT: .venv
+      PYTHONPATH: src
+
+  dev-frontend:
+    desc: フロントエンド開発サーバを起動
+    dir: src/frontend
+    cmds:
+      - npm run dev -- --host
+
+  build-frontend:
+    desc: フロントエンドをビルド
+    dir: src/frontend
+    cmds:
+      - npm run build
+
+  lint-backend:
+    desc: ruff などのリンタ追加時用プレースホルダ
+    cmds:
+      - echo "未設定"

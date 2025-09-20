@@ -1,0 +1,26 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments / uv caches
+.venv/
+.uv-cache/
+.uv-tools/
+
+# Node / frontend artifacts
+node_modules/
+src/frontend/node_modules/
+src/frontend/dist/
+
+# Local config / secrets
+.env
+.env.*
+
+# Misc
+*.log
+*.tmp
+*.DS_Store
