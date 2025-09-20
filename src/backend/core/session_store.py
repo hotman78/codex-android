@@ -10,6 +10,10 @@ from uuid import UUID, uuid4
 
 from .config import settings
 from ..services.codex_client import CodexClient, CodexConfig, CodexExecutionError
+from ..services.session_logger import get_session_logger
+
+
+logger = logging.getLogger(__name__)
 
 
 TERMINATE_MESSAGE = "__CLOSE__"
@@ -41,7 +45,8 @@ class InMemorySessionStore:
             session = Session(session_id=uuid4())
             self._sessions[session.session_id] = session
             asyncio.create_task(self._codex_runner(session))
-            return session
+        await _write_session_log(session.session_id, "status", "session created")
+        return session
 
     async def get_session(self, session_id: UUID) -> Optional[Session]:
         async with self._lock:
@@ -51,6 +56,8 @@ class InMemorySessionStore:
         session = await self.get_session(session_id)
         if session is None:
             raise KeyError("session not found")
+
+        await _write_session_log(session.session_id, "input", text)
 
         await session.queue.put(text)
         try:
@@ -76,11 +83,9 @@ class InMemorySessionStore:
         if session:
             await session.queue.put(TERMINATE_MESSAGE)
             await session.response_queue.put(TERMINATE_MESSAGE)
+            await _write_session_log(session.session_id, "status", "session closed")
             return True
         return False
-
-
-logger = logging.getLogger(__name__)
 
 
 _codex_client: CodexClient | None = None
@@ -111,6 +116,7 @@ async def codex_runner(session: Session) -> str:
         except CodexExecutionError as exc:
             logger.exception("codex exec failed")
             response = f"[codex-error] {exc}"
+        await _write_session_log(session.session_id, "output", response)
         session.latest_output = response
         await session.response_queue.put(session.latest_output)
     return session.latest_output
@@ -128,3 +134,10 @@ async def get_session_store() -> InMemorySessionStore:
             response_timeout=settings.codex_timeout + 5,
         )
     return _session_store
+
+
+async def _write_session_log(session_id: UUID, stream: str, text: str) -> None:
+    try:
+        await get_session_logger().log_event(session_id, stream, text)
+    except Exception:  # noqa: BLE001
+        logger.exception("failed to append session log")

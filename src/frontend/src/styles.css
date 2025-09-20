@@ -9,6 +9,12 @@ body {
   color: #f5f7ff;
 }
 
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .container {
   max-width: 960px;
   margin: 0 auto;
@@ -18,10 +24,105 @@ body {
   gap: 1.5rem;
 }
 
-header {
+.app-header {
+  background: rgba(15, 23, 42, 0.82);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  backdrop-filter: blur(12px);
+}
+
+.header-inner {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+  gap: 1.5rem;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.brand p {
+  margin: 0.25rem 0 0;
+  color: rgba(226, 232, 240, 0.75);
+  font-size: 0.95rem;
+}
+
+.app-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.nav-item {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: transparent;
+  color: inherit;
+  border-radius: 9999px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.nav-item:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.15);
+  transform: translateY(-1px);
+}
+
+.nav-item.is-active {
+  background: #38bdf8;
+  color: #0f172a;
+  border-color: transparent;
+  cursor: default;
+}
+
+.nav-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.session-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.session-label {
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.session-id {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.95rem;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.app-main {
+  flex: 1;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.85);
+}
+
+.output-section,
+.input-section {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
 .output {

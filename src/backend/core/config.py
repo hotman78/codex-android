@@ -18,6 +18,10 @@ class Settings(BaseSettings):
         description="codex exec 呼び出しのタイムアウト (秒)",
         ge=1.0,
     )
+    session_log_dir: Path = Field(
+        default_factory=lambda: Path.home() / "logs" / "sessions",
+        description="セッションログ保存先ディレクトリ",
+    )
 
     class Config:
         env_prefix = "CODEX_WEB_"
