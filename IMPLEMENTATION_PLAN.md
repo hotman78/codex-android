@@ -9,7 +9,7 @@
 - **WSL2 内バックエンド**: FastAPI (ASGI) + `codex` CLI サブプロセス制御。
 - **フロントエンド**: 単一ページ Web アプリ (React/Vite あるいは HTMX)。入力フォームとログストリーム表示。
 - **ストリーミング**: Server-Sent Events (SSE) または WebSocket による標準出力の逐次転送。
-- **トンネル**: Cloudflare Tunnel (`cloudflared`) が 127.0.0.1:8000 を外部公開。Cloudflare Access で認証。
+- **トンネル**: Cloudflare Tunnel (`cloudflared`) が 127.0.0.1:5174 を外部公開。Cloudflare Access で認証。
 - **保存領域**: セッションログは SQLite/JSONL で任意保存。機密性に応じて暗号化も検討。
 
 ```
@@ -53,7 +53,7 @@ Browser ──HTTPS── Cloudflare ──cloudflared── FastAPI ──Codex
   credentials-file: /home/hotman/.cloudflared/codex-web.json
   ingress:
     - hostname: codex.example.com
-      service: http://localhost:8000
+      service: http://localhost:5174
       originRequest:
         http2: true
     - service: http_status:404
