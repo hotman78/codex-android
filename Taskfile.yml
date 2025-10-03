@@ -41,6 +41,11 @@ tasks:
     cmds:
       - npm run build
 
+  run-discord-bot:
+    desc: Discord ボットを起動
+    cmds:
+      - uvx --from gh:hotman78/codex-android run-discord-bot
+
   lint-backend:
     desc: ruff などのリンタ追加時用プレースホルダ
     cmds:

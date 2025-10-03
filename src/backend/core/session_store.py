@@ -9,7 +9,12 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 from .config import settings
-from ..services.codex_client import CodexClient, CodexConfig, CodexExecutionError
+from ..services.codex_client import (
+    CodexClient,
+    CodexConfig,
+    CodexExecutionError,
+    CodexTimeoutError,
+)
 from ..services.session_logger import get_session_logger
 
 
@@ -17,6 +22,10 @@ logger = logging.getLogger(__name__)
 
 
 TERMINATE_MESSAGE = "__CLOSE__"
+CANCELLED_MESSAGE = "[cancelled] Codex の実行を停止しました。"
+TIMEOUT_MESSAGE_TEMPLATE = (
+    "[timeout] Codex の応答が {seconds:.0f} 秒以内に完了しませんでした。"
+)
 
 
 @dataclass
@@ -25,6 +34,7 @@ class Session:
     latest_output: str = ""
     queue: asyncio.Queue[str] = field(default_factory=asyncio.Queue)
     response_queue: asyncio.Queue[str] = field(default_factory=asyncio.Queue)
+    current_task: asyncio.Task[str] | None = field(default=None, repr=False, compare=False)
 
 
 class InMemorySessionStore:
@@ -77,10 +87,26 @@ class InMemorySessionStore:
             session.latest_output = output
             await session.response_queue.put(output)
 
+    async def cancel_current(self, session_id: UUID) -> bool:
+        session = await self.get_session(session_id)
+        if session is None:
+            raise KeyError("session not found")
+
+        task = session.current_task
+        if task is None or task.done():
+            return False
+
+        task.cancel()
+        await _write_session_log(session.session_id, "status", "cancellation requested")
+        return True
+
     async def close_session(self, session_id: UUID) -> bool:
         async with self._lock:
             session = self._sessions.pop(session_id, None)
         if session:
+            current_task = session.current_task
+            if current_task and not current_task.done():
+                current_task.cancel()
             await session.queue.put(TERMINATE_MESSAGE)
             await session.response_queue.put(TERMINATE_MESSAGE)
             await _write_session_log(session.session_id, "status", "session closed")
@@ -111,11 +137,19 @@ async def codex_runner(session: Session) -> str:
         text = await session.queue.get()
         if text == TERMINATE_MESSAGE:
             break
+        session.current_task = asyncio.create_task(client.run(text))
         try:
-            response = await client.run(text)
+            response = await session.current_task
+        except asyncio.CancelledError:
+            response = CANCELLED_MESSAGE
+        except CodexTimeoutError as exc:
+            logger.warning("codex exec timed out", exc_info=True)
+            response = TIMEOUT_MESSAGE_TEMPLATE.format(seconds=exc.timeout)
         except CodexExecutionError as exc:
             logger.exception("codex exec failed")
             response = f"[codex-error] {exc}"
+        finally:
+            session.current_task = None
         await _write_session_log(session.session_id, "output", response)
         session.latest_output = response
         await session.response_queue.put(session.latest_output)

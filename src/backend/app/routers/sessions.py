@@ -4,7 +4,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 
 from ...core.session_store import InMemorySessionStore, get_session_store
-from ...models.session import SessionCreateResponse, SessionInput, SessionOutput
+from ...models.session import (
+    SessionCancelResponse,
+    SessionCreateResponse,
+    SessionInput,
+    SessionOutput,
+)
 
 router = APIRouter()
 
@@ -31,6 +36,30 @@ async def send_input(
 
     result = await store.enqueue_input(session.session_id, payload.text)
     return SessionOutput(session_id=session.session_id, latest_output=result)
+
+
+@router.post("/{session_id}/cancel", response_model=SessionCancelResponse)
+async def cancel_execution(
+    session_id: UUID,
+    store: InMemorySessionStore = Depends(get_session_store),
+) -> SessionCancelResponse:
+    """現在進行中の Codex 実行を停止する。"""
+    session = await store.get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="session not found")
+
+    cancelled = await store.cancel_current(session.session_id)
+    if not cancelled:
+        return SessionCancelResponse(
+            session_id=session.session_id,
+            cancelled=False,
+            message="実行中のコマンドはありません。",
+        )
+    return SessionCancelResponse(
+        session_id=session.session_id,
+        cancelled=True,
+        message="停止要求を送信しました。",
+    )
 
 
 @router.delete("/{session_id}", status_code=204)

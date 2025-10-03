@@ -15,3 +15,9 @@ class SessionInput(BaseModel):
 class SessionOutput(BaseModel):
     session_id: UUID = Field(..., description="対象セッション ID")
     latest_output: str = Field("", description="サーバが確認した最新の標準出力")
+
+
+class SessionCancelResponse(BaseModel):
+    session_id: UUID = Field(..., description="対象セッション ID")
+    cancelled: bool = Field(..., description="キャンセル要求を受理したかどうか")
+    message: str = Field(..., description="キャンセル要求に対するステータスメッセージ")

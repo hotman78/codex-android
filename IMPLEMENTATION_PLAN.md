@@ -58,7 +58,7 @@ Browser ──HTTPS── Cloudflare ──cloudflared── FastAPI ──Codex
         http2: true
     - service: http_status:404
   ```
-- Cloudflare Access で `codex.example.com` 向けにメールワンタイムパス or SSO を設定。
+- Cloudflare DNS で `codex.example.com` をトンネルに割り当て (`CNAME` → `uuid.cfargotunnel.com`) し、Cloudflare Access で `codex.example.com` 向けにメールワンタイムパス or SSO を設定。
 - systemd / NSSM 等で `cloudflared service install` を用い常駐化。
 
 ## 7. 開発フロー

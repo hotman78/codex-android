@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
@@ -19,6 +20,14 @@ class CodexConfig:
 
 class CodexExecutionError(RuntimeError):
     """Codex 実行時のエラー。"""
+
+
+class CodexTimeoutError(CodexExecutionError):
+    """Codex 実行がタイムアウトした場合のエラー。"""
+
+    def __init__(self, timeout: float):
+        super().__init__(f"codex exec timed out after {timeout:.1f}s")
+        self.timeout = timeout
 
 
 class CodexClient:
@@ -58,7 +67,14 @@ class CodexClient:
             )
         except asyncio.TimeoutError as exc:
             process.kill()
-            raise CodexExecutionError("codex exec timed out") from exc
+            with suppress(ProcessLookupError):
+                await process.wait()
+            raise CodexTimeoutError(self._config.timeout) from exc
+        except asyncio.CancelledError:
+            process.kill()
+            with suppress(ProcessLookupError):
+                await process.wait()
+            raise
 
         stdout_text = stdout_bytes.decode("utf-8", errors="ignore")
         stderr_text = stderr_bytes.decode("utf-8", errors="ignore")
@@ -124,4 +140,9 @@ class CodexClient:
         return messages
 
 
-__all__ = ["CodexClient", "CodexConfig", "CodexExecutionError"]
+__all__ = [
+    "CodexClient",
+    "CodexConfig",
+    "CodexExecutionError",
+    "CodexTimeoutError",
+]
